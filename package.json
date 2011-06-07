@@ -1,0 +1,20 @@
+{ "name" : "muchmala-generator"
+, "version" : "0.0.1"
+, "description" : "Service that generates puzzles from uploaded pictures"
+, "homepage" : "https://github.com/muchmala/muchmala-generator"
+, "contributors" :
+   [ "Serge Borbit <serge.borbit@gmail.com>"
+   , "Taras Kunch <taras.kunch@gmail.com>"
+   , "George Miroshnykov <george.miroshnykov@gmail.com>"
+   ]
+, "repository" :
+ { "type" : "git"
+ , "url" : "https://github.com/muchmala/muchmala-generator.git"
+ }
+, "dependencies" :
+ { "async" : "~0"
+ , "optimist" : "~0"
+
+ , "muchmala-common" : "~0"
+ }
+}
