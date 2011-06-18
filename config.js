@@ -21,7 +21,7 @@ config.storage = {
 };
 
 
-var localConfigPath = './config.local.js';
+var localConfigPath = __dirname + '/config.local.js';
 if (path.existsSync(localConfigPath)) {
     var localConfig = require(localConfigPath),
         deepExtend = require('muchmala-common').misc.deepExtend;

@@ -1,5 +1,5 @@
 { "name" : "muchmala-generator"
-, "version" : "0.0.1"
+, "version" : "0.0.2"
 , "description" : "Service that generates puzzles from uploaded pictures"
 , "homepage" : "https://github.com/muchmala/muchmala-generator"
 , "contributors" :
