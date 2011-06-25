@@ -12,10 +12,10 @@ var NEW_IMAGES_QUEUE = 'new-image';
 var GENERATED_IMAGES_QUEUE = 'new-puzzle';
 
 var IMAGE_MIN_WIDTH = 500;
-var IMAGE_MAX_WIDTH = 2000;
+var IMAGE_MAX_WIDTH = 2500;
 
 var IMAGE_MIN_HEIGHT = 500;
-var IMAGE_MAX_HEIGHT = 2000;
+var IMAGE_MAX_HEIGHT = 2500;
 
 var PUZZLES_DIR = '/puzzles';
 
