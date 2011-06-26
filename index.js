@@ -18,6 +18,8 @@ var IMAGE_MIN_HEIGHT = 500;
 var IMAGE_MAX_HEIGHT = 2500;
 
 var PUZZLES_DIR = '/puzzles';
+var COVERS_DIR = '/covers';
+var FRAMES_DIR = '/frames';
 
 function main() {
     init(function(err) {
@@ -62,9 +64,22 @@ function onNewImage(options) {
     logger.debug(options);
 
     async.waterfall([function(callback) {
+        puzzleGenerator.createCovers(options.pieceSize, callback);
+
+    }, function(coversData, callback) {
+        uploadCovers(coversData.resultDir, coversData.size, callback);
+
+    }, function(callback) {
+        puzzleGenerator.createFrame(options.pieceSize, callback);
+
+    }, function(frameData, callback) {
+        uploadFrames(frameData.resultDir, frameData.size, callback);
+
+    }, function(callback) {
         resources.imagesStorage.get(options.path, callback);
 
     }, function(imagePath, callback) {
+
         puzzleGenerator.createPuzzle(imagePath, options, callback);
 
     }, function(metadata, callback) {
@@ -88,15 +103,33 @@ function onNewImage(options) {
     });
 }
 
-function uploadPuzzle(metadata, callback) {
-    fs.readdir(metadata.resultDir, function(err, files) {
+function uploadPuzzle(puzzleData, callback) {
+    var src = puzzleData.resultDir;
+    var dst = PUZZLES_DIR + '/' + puzzleData.puzzleId;
+    uploadDir(resources.puzzlesStorage, src, dst, callback);
+}
+
+function uploadCovers(src, size, callback) {
+    var dst = COVERS_DIR + '/' + size;
+    uploadDir(resources.puzzlesStorage, src, dst, callback);
+}
+
+function uploadFrames(src, size, callback) {
+    var dst = FRAMES_DIR + '/' + size;
+    uploadDir(resources.puzzlesStorage, src, dst, callback);
+}
+
+function uploadDir(storage, src, dst, callback) {
+    fs.readdir(src, function(err, files) {
         if (err) {
             return callback(err);
         }
 
         async.forEachSeries(files, function(file, callback) {
-            logger.debug("Saving ", metadata.resultDir + '/' + file, "to storage");
-            resources.puzzlesStorage.put(metadata.resultDir + '/' + file, PUZZLES_DIR + '/' + metadata.puzzleId + '/' + file, callback);
+            var srcFile = src + '/' + file;
+            var dstFile = dst + '/' + file;
+            logger.debug('Saving ' + srcFile + ' to ' + dstFile);
+            storage.put(srcFile, dstFile, callback);
         }, callback);
     });
 }
