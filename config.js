@@ -2,30 +2,20 @@ var path = require('path');
 var config = exports;
 
 config.queue = {
-    host: "127.0.0.1",
-    port: 6379,
-    password: undefined,
-    database: 0
+    host: process.env.MUCHMALA_QUEUE_HOST || '127.0.0.1',
+    port: process.env.MUCHMALA_QUEUE_PORT || 6379,
+    password: process.env.MUCHMALA_QUEUE_PASSWORD || undefined,
+    database: process.env.MUCHMALA_QUEUE_DATABASE || 0
 };
 
 config.storage = {
-    type: 'file',
+    type: process.env.MUCHMALA_FE_STORAGE_TYPE || 'file',
     file: {
-        location: './webroot'
+        location: process.env.MUCHMALA_FE_STORAGE_FILE_LOCATION || './webroot'
     },
     s3: {
-        key:    null,
-        secret: null,
-        bucket: 'taras.muchmala.com'
+        key:    process.env.MUCHMALA_FE_STORAGE_S3_KEY || null,
+        secret: process.env.MUCHMALA_FE_STORAGE_S3_SECRET || null,
+        bucket: process.env.MUCHMALA_FE_STORAGE_S3_BUCKET || 'dev.muchmala.com'
     }
 };
-
-
-var localConfigPath = __dirname + '/config.local.js';
-if (path.existsSync(localConfigPath)) {
-    var localConfig = require(localConfigPath),
-        deepExtend = require('muchmala-common').misc.deepExtend;
-
-    deepExtend(config, localConfig);
-
-}
