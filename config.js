@@ -9,13 +9,13 @@ config.queue = {
 };
 
 config.storage = {
-    type: process.env.MUCHMALA_FE_STORAGE_TYPE || 'file',
+    type: process.env.MUCHMALA_STORAGE_TYPE || 'file',
     file: {
-        location: process.env.MUCHMALA_FE_STORAGE_FILE_LOCATION || './webroot'
+        location: process.env.MUCHMALA_STORAGE_FILE_LOCATION || './webroot'
     },
     s3: {
-        key:    process.env.MUCHMALA_FE_STORAGE_S3_KEY || null,
-        secret: process.env.MUCHMALA_FE_STORAGE_S3_SECRET || null,
-        bucket: process.env.MUCHMALA_FE_STORAGE_S3_BUCKET || 'dev.muchmala.com'
+        key:    process.env.MUCHMALA_STORAGE_S3_KEY || null,
+        secret: process.env.MUCHMALA_STORAGE_S3_SECRET || null,
+        bucket: process.env.MUCHMALA_STORAGE_S3_BUCKET || 'dev.muchmala.com'
     }
 };
