@@ -1,15 +1,14 @@
 var fs = require('fs'),
     async = require('async'),
-
-    muchmalaCommon = require('muchmala-common'),
-    puzzleGenerator = muchmalaCommon.puzzleGenerator,
-    logger = muchmalaCommon.logger,
-    db = muchmalaCommon.db,
     config = require('./config'),
+    common = require('muchmala-common'),
+    generator = common.puzzleGenerator,
+    logger = common.logger,
+    db = common.db,
     resources = {};
 
 var NEW_IMAGES_QUEUE = 'new-image';
-var GENERATED_IMAGES_QUEUE = 'new-puzzle';
+var NEW_PUZZLES_QUEUE = 'new-puzzle';
 
 var IMAGE_MIN_WIDTH = 500;
 var IMAGE_MAX_WIDTH = 2500;
@@ -38,13 +37,13 @@ function init(callback) {
 
     async.series({
         queue: function(callback) {
-            callback(null, new muchmalaCommon.queueAdapter(config.queue));
+            callback(null, new common.queueAdapter(config.queue));
         },
         imagesStorage: function(callback) {
-            muchmalaCommon.storage.createStorage(config.storage.type, config.storage[config.storage.type], callback);
+            common.storage.createStorage(config.storage.type, config.storage[config.storage.type], callback);
         },
         puzzlesStorage: function(callback) {
-            muchmalaCommon.storage.createStorage(config.storage.type, config.storage[config.storage.type], callback);
+            common.storage.createStorage(config.storage.type, config.storage[config.storage.type], callback);
         }
     }, function(err, initializedResources) {
         resources = initializedResources;
@@ -54,52 +53,53 @@ function init(callback) {
 }
 
 function attachValidators() {
-    puzzleGenerator.validators.append([
-        puzzleGenerator.validators.getWidthValidator(IMAGE_MIN_WIDTH, IMAGE_MAX_WIDTH),
-        puzzleGenerator.validators.getWidthValidator(IMAGE_MIN_HEIGHT, IMAGE_MAX_HEIGHT)
+    generator.validators.append([
+        generator.validators.getWidthValidator(IMAGE_MIN_WIDTH, IMAGE_MAX_WIDTH),
+        generator.validators.getHeightValidator(IMAGE_MIN_HEIGHT, IMAGE_MAX_HEIGHT)
     ]);
 }
 
 function onNewImage(options) {
     logger.debug(options);
 
-    async.waterfall([function(callback) {
-        puzzleGenerator.createCovers(options.pieceSize, callback);
+    async.waterfall([
+        function(callback) {
+            generator.createCovers(options.pieceSize, callback);
+        },
+        function(coversData, callback) {
+            uploadCovers(coversData.resultDir, coversData.size, callback);
+        },
+        function(callback) {
+            generator.createFrame(options.pieceSize, callback);
+        },
+        function(frameData, callback) {
+            uploadFrames(frameData.resultDir, frameData.size, callback);
+        },
+        function(callback) {
+            resources.imagesStorage.get(options.path, callback);
+        },
+        function(imagePath, callback) {
+            generator.createPuzzle(imagePath, options, callback);
+        },
+        function(metadata, callback) {
+            metadata.puzzleId = db.generateId();
+            metadata.sessionId = options.sessionId;
 
-    }, function(coversData, callback) {
-        uploadCovers(coversData.resultDir, coversData.size, callback);
-
-    }, function(callback) {
-        puzzleGenerator.createFrame(options.pieceSize, callback);
-
-    }, function(frameData, callback) {
-        uploadFrames(frameData.resultDir, frameData.size, callback);
-
-    }, function(callback) {
-        resources.imagesStorage.get(options.path, callback);
-
-    }, function(imagePath, callback) {
-
-        puzzleGenerator.createPuzzle(imagePath, options, callback);
-
-    }, function(metadata, callback) {
-        metadata.puzzleId = db.generateId();
-
-        uploadPuzzle(metadata, function(err) {
-            callback(err, metadata);
-        });
-
-    }, function(metadata, callback) {
-        resources.queue.publish(GENERATED_IMAGES_QUEUE, metadata);
-        callback();
-
-    }], function(err) {
-        if (err) {
-            logger.error(err);
-            return;
+            uploadPuzzle(metadata, function(err) {
+                callback(err, metadata);
+            });
+        },
+        function(metadata, callback) {
+            resources.queue.publish(NEW_PUZZLES_QUEUE, metadata);
+            callback();
         }
-
-        logger.info("Image processed");
+    ], function(error) {
+        if (error) {
+            resources.queue.publish(NEW_PUZZLES_QUEUE + '-' + options.sessionId, {error: error});
+            logger.error(error);
+        } else {
+            logger.info("Image processed");
+        }
     });
 }
 
@@ -120,9 +120,9 @@ function uploadFrames(src, size, callback) {
 }
 
 function uploadDir(storage, src, dst, callback) {
-    fs.readdir(src, function(err, files) {
-        if (err) {
-            return callback(err);
+    fs.readdir(src, function(error, files) {
+        if (error) {
+            return callback(error);
         }
 
         async.forEachSeries(files, function(file, callback) {
